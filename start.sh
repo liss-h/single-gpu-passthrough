@@ -6,16 +6,15 @@ set -x
 # Load the config file with our environmental variables
 source "/etc/libvirt/hooks/kvm.conf"
 
+
 # save current gnome session
 su -c "/home/liss/Development/session-restore/save-session.py --dbus-address unix:path=/run/user/1000/bus" - liss
 
 # kill the display manager
 systemctl stop gdm.service
-killall gdm-x-session
 
 # kill pipewire
-pipewire_pid=$(pgrep -u liss pipewire)
-kill $pipewire_pid
+su -c "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus systemctl --user stop pipewire pipewire-pulse" - liss
 
 # Unbind VTconsoles
 echo 0 > /sys/class/vtconsole/vtcon0/bind
@@ -47,12 +46,14 @@ modprobe vfio_iommu_type1
 # idk if this is nessesary
 sleep 4
 
+
 # rebind VTConsoles
 echo 1 > /sys/class/vtconsole/vtcon0/bind
 echo 1 > /sys/class/vtconsole/vtcon1/bind
 
+# restart users dbus, to prevent gnome from not starting
+su -c "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus systemctl --user restart dbus" - liss
+
 # start gdm
 systemctl restart gdm.service
 
-# restart users dbus, to prevent gnome from not being able to register the session
-su -c "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus systemctl --user restart dbus" - liss
