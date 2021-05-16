@@ -7,47 +7,51 @@ set -x
 source "/etc/libvirt/hooks/kvm.conf"
 
 
-# save current gnome session
-su -c "/home/liss/Development/session-restore/save-session.py --dbus-address unix:path=/run/user/1000/bus" - liss
+# Save current gnome session
+su -c "/home/liss/CLionProjects/session-restore/target/release/session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
 
-# kill display manager
+# Kill the display manager
 systemctl stop gdm.service
 
-# kill pipewire
-su -c "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus systemctl --user stop pipewire pipewire-pulse" - liss
+# Kill pipewire
+su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user stop pipewire pipewire-pulse" - $VIRSH_USER
 
 # Unbind VTconsoles
 echo 0 > /sys/class/vtconsole/vtcon0/bind
 echo 0 > /sys/class/vtconsole/vtcon1/bind
 
-# avoid race condition
-sleep 3
+# Avoid race condition by waiting a few seconds
+sleep 4
 
-# Unload all the vfio modules
-modprobe -r vfio_pci
-modprobe -r vfio_iommu_type1
-modprobe -r vfio
+# Unload all the vfio modules; not nessesary for me since i have them permanently loaded
+#modprobe -r vfio_pci
+#modprobe -r vfio_iommu_type1
+#modprobe -r vfio
 
 # Reattach the gpu
-virsh nodedev-reattach $VIRSH_GPU_VIDEO
-virsh nodedev-reattach $VIRSH_GPU_AUDIO
+virsh nodedev-reattach "$VIRSH_GPU_VIDEO"
 
-# Load all Radeon drivers
+# Reattach gpu audio; not needed for me since mine is permanently detached
+#virsh nodedev-reattach "$VIRSH_GPU_AUDIO"
+
+# Load all previously unloaded radeon drivers
 modprobe  amdgpu
-modprobe  gpu_sched
-modprobe  ttm
-modprobe  drm_kms_helper
-modprobe  i2c_algo_bit
-modprobe  drm
-modprobe  snd_hda_intel
+#modprobe  gpu_sched
+#modprobe  ttm
+#modprobe  drm_kms_helper
+#modprobe  i2c_algo_bit
+#modprobe  drm
+#modprobe  snd_hda_intel
 
+# Avoid race condition
+sleep 2
 
-#rebind VTConsoles
+# Rebind VTConsoles
 echo 1 > /sys/class/vtconsole/vtcon0/bind
 echo 1 > /sys/class/vtconsole/vtcon1/bind
 
-# restart users dbus, to prevent gnome from not starting
-su -c "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus systemctl --user restart dbus" - liss
+# Restart the users dbus, to prevent gnome from not starting
+su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user restart dbus" - $VIRSH_USER
 
-# start display manager
+# Start display manager
 systemctl restart gdm.service
