@@ -23,8 +23,8 @@ if ! id -u $VIRSH_USER > /dev/null; then
 fi
 
 
-# Save current gnome session
-su -c "/home/liss/CLionProjects/session-restore/target/release/session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
+# Save current gnome session (https://github.com/Clueliss/gnome-session-restore)
+su -c "gnome-session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
 
 # Kill the display manager
 systemctl stop gdm.service
