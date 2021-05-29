@@ -39,15 +39,6 @@ echo 0 > /sys/class/vtconsole/vtcon1/bind
 # Avoid a race condition by waiting a couple of seconds
 sleep 4
 
-# Unload all nessesary radeon drivers
-modprobe -r amdgpu
-#modprobe -r snd_hda_intel
-#modprobe -r gpu_sched
-#modprobe -r ttm
-#modprobe -r drm_kms_helper
-#modprobe -r i2c_algo_bit
-#modprobe -r drm
-
 # Unbind the GPU from display driver
 virsh nodedev-detach "$VIRSH_GPU_VIDEO"
 

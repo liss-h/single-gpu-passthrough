@@ -34,15 +34,6 @@ virsh nodedev-reattach "$VIRSH_GPU_VIDEO"
 # Reattach gpu audio; not needed for me since mine is permanently detached
 #virsh nodedev-reattach "$VIRSH_GPU_AUDIO"
 
-# Load all previously unloaded radeon drivers
-modprobe  amdgpu
-#modprobe  gpu_sched
-#modprobe  ttm
-#modprobe  drm_kms_helper
-#modprobe  i2c_algo_bit
-#modprobe  drm
-#modprobe  snd_hda_intel
-
 # Avoid race condition
 sleep 2
 
