@@ -1,13 +1,21 @@
 #!/bin/bash
 
-# Helpful to read output when debugging
+# Display each command after execution
 set -x
+
+# Treat undefined variables as error
+set -u
 
 # Load the config file with our environmental variables
 source "/etc/libvirt/hooks/kvm.conf"
 
 
-# Save current gnome session (https://github.com/Clueliss/gnome-session-restore)
+if [[ -f "/home/liss/.win10debugshutdown" ]]; then
+    echo "doing debug stop, nothing to do"
+    exit 0
+fi
+
+# Save current gnome session
 su -c "gnome-session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
 
 # Kill the display manager
@@ -15,6 +23,9 @@ systemctl stop gdm.service
 
 # Kill pipewire
 su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user stop pipewire pipewire-pulse" - $VIRSH_USER
+
+# Reverse cpu core isolation
+systemctl set-property --runtime -- user.slice AllowedCPUs=0-11
 
 # Unbind VTconsoles
 echo 0 > /sys/class/vtconsole/vtcon0/bind
@@ -29,10 +40,18 @@ sleep 4
 #modprobe -r vfio
 
 # Reattach the gpu
-virsh nodedev-reattach "$VIRSH_GPU_VIDEO"
+modprobe amdgpu
+virsh nodedev-reattach $VIRSH_GPU_VIDEO
 
-# Reattach gpu audio; not needed for me since mine is permanently detached
-#virsh nodedev-reattach "$VIRSH_GPU_AUDIO"
+# Detach secondary gpu
+virsh nodedev-detach $VIRSH_SECONDARY_GPU_VIDEO
+modprobe -r radeon
+
+# Reattach gpu audio; not needed for me since mine is permanently detached 
+#virsh nodedev-reattach $VIRSH_GPU_AUDIO
+
+# Unbind secondary gpu audio
+#virsh nodedev-detach $VIRSH_SECONDARY_GPU_AUDIO
 
 # Avoid race condition
 sleep 2
@@ -46,3 +65,6 @@ su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user restart d
 
 # Start display manager
 systemctl restart gdm.service
+
+# Stop scream
+su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user stop scream" - $VIRSH_USER
