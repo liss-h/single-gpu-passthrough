@@ -9,8 +9,7 @@ set -u
 # Load the config file with our environmental variables
 source "/etc/libvirt/hooks/kvm.conf"
 
-
-if virsh nodedev-dumpxml $VIRSH_GPU_VIDEO | sed -n '/<driver>/,/<\/driver>/p' | grep -q "vfio-pci"; then
+if [[ -e /sys/bus/pci/drivers/vfio-pci/"$VIRSH_GPU_VIDEO" ]]; then
 	echo "primary gpu already claimed by vfio-pci, nothing to do"
 	exit 0
 fi
@@ -34,24 +33,24 @@ echo 0 > /sys/class/vtconsole/vtcon1/bind
 # Avoid a race condition by waiting a couple of seconds
 sleep 4
 
-# Unbind the GPU from display driver
-virsh nodedev-detach $VIRSH_GPU_VIDEO
-modprobe -r amdgpu
-
-# Reattach secondary gpu
-modprobe radeon
-virsh nodedev-reattach $VIRSH_SECONDARY_GPU_VIDEO
-
-# Unbind gpu audio, not needed for me since mine is permanently detached 
-#virsh nodedev-detach $VIRSH_GPU_AUDIO
-
-# Bind secondary gpu audio
-#virsh nodedev-reattach $VIRSH_SECONDARY_GPU_AUDIO
-
 # Load VFIO kernel module; not nessesary for me since i have them permanently loaded
 #modprobe vfio
 #modprobe vfio_pci
 #modprobe vfio_iommu_type1
+
+# Unbind the GPU from display driver
+driver-rebind "$VIRSH_GPU_VIDEO" amdgpu vfio-pci # virsh nodedev-detach $VIRSH_GPU_VIDEO
+modprobe -r amdgpu
+
+# Reattach secondary gpu
+modprobe radeon
+driver-rebind "$VIRSH_SECONDARY_GPU_VIDEO" vfio-pci radeon # virsh nodedev-reattach $VIRSH_SECONDARY_GPU_VIDEO
+
+# Unbind gpu audio, not needed for me since mine is permanently detached 
+#driver-rebind "$VIRSH_GPU_AUDIO" snd_hda_intel vfio-pci
+
+# Bind secondary gpu audio
+#driver-rebind "$VIRSH_SECONDARY_GPU_AUDIO" vfio-pci snd_hda_intel
 
 # Avoid race condition
 sleep 2

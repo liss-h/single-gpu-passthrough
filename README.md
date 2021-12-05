@@ -53,7 +53,21 @@ Create this directory structure based with the provided files.
 
 <br>
 
+## Installing driver-rebind.sh
+For the scripts to work you need to copy driver-rebind.sh to a directory in your $PATH and rename it to driver-rebind, this is typically
+done by.
+
+> ### \# install ./driver-rebind.sh /usr/local/bin/driver-rebind
+
+<br>
+
 ## Troubleshooting
+
+### Primary monitor switches to Windows just fine but secondary stays black
+> If you are using a KVM switch like I am then it's possible that
+> if you press the switch button too slowly, the secondary GPU won't initialize properly, since it thinks there is no
+> display connected. So to solve that just press the switch button faster, like immediatly after
+> beginning to start the VM.
 
 ### Race conditions
 > There are a few places in `start.sh` and `stop.sh` where artitficial delays are 
@@ -82,11 +96,11 @@ Create this directory structure based with the provided files.
 # My Setup
 
 ## Software
-- Fedora 34 Workstation
+- Fedora 35 Workstation
 - Gnome
 - Pipewire
 - Wayland
-- SELinux disabled, because I couldn't be bothered to fix my issues with it
+- SELinux enabled
 
 <br>
 
@@ -94,13 +108,13 @@ Create this directory structure based with the provided files.
 - Gigabyte B550 AORUS Pro
 - AMD Ryzen R5 3600
 - AMD Radeon Vega 64 (to be passed through)
-- AMD Radeon R7 240
+- AMD Radeon HD 5450 (as the replacement gpu when the Vega is passed through)
 
 <br>
 
 ## Monitor Setup
-- Monitor 1 plugged into Vega 64 via HDMI
-- Monitor 2 plugged into R7 240 via VGA
+- Monitor 1 plugged into Vega 64
+- Monitor 2 plugged into a KVM switch that is plugged into both the Vega and HD 5450
 
 The reasoning behind this rather weird configuration is that I want
 to be able to access Linux even when the VM is booted, so only my primary Monitor
@@ -110,7 +124,8 @@ to handle Discord and other applications, so it can focus solely on the game I a
 So my setup seemlessly* transitions from being a dual monitor Linux setup to
 a one monitor Linux, one monitor Windows setup.
 
-*: It's obviously not completely seemless since gdm needs to be restarted on every GPU handover.
+*: It's obviously not completely seemless since gdm needs to be restarted on every GPU handover. And I need to press
+    the switch button on my KVM switch.
 
 <br>
 
@@ -126,26 +141,25 @@ My user is in the following groups
 
 - `amd_iommu=on` : for full virtualization
 - `rd.driver.pre=vfio-pci` : force loading vfio-pci
-- `radeon.si_support=0 amdgpu.si_support=1` : to force `amdgpu` instead of `radeon` for my R7 240 (since wayland wouldn't work otherwise)
 
 > ### /etc/default/grub
 > ```
-> GRUB_CMDLINE_LINUX="rhgb quiet amd_iommu=on rd.driver.pre=vfio-pci radeon.si_support=0 amdgpu.si_support=1"
+> GRUB_CMDLINE_LINUX="rhgb quiet amd_iommu=on rd.driver.pre=vfio-pci"
 > ```
 
 <br>
 
 ## Permanent Claims
 
-I have my Vega GPU HDMI-Audio device permanently claimed, since i don't use it anyways.
-That also ensures that all needed vfio kernel modules are permanently loaded. And it is one less device to detach, which _maybe_ makes it faster (haven't tested that).
+I have my both my GPU HDMI-Audio devices permanently claimed, since i don't use them anyways.
+That also ensures that all needed vfio kernel modules are permanently loaded.
 
 > ### /etc/modprobe.d/vfio.conf
 > ```
-> options vfio-pci ids=VEGA_AUDIO_DEVICE_ID
+> options vfio-pci ids=VEGA_AUDIO_DEVICE_ID,HD5450_VIDEO_DEVICE_ID,HD5450_AUDIO_DEVICE_ID
 > ```
 
-You can get the GPU's PCI device id via `lspci -nnv`. Importantly this has to be the id in the square brackets at the end and not the one in front.
+You can get the PCI device ids via `lspci -nnv`. Importantly this has to be the id in the square brackets at the end and not the one in front.
 So in this case `1002:aaf8` and **not** `08:00.1`.
 
 > ### lspci -nnv

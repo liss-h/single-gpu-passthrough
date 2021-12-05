@@ -9,8 +9,7 @@ set -u
 # Load the config file with our environmental variables
 source "/etc/libvirt/hooks/kvm.conf"
 
-
-if [[ -f "/home/liss/.win10debugshutdown" ]]; then
+if [[ -e /home/liss/.win10debugshutdown ]]; then
     echo "doing debug stop, nothing to do"
     exit 0
 fi
@@ -34,24 +33,24 @@ echo 0 > /sys/class/vtconsole/vtcon1/bind
 # Avoid race condition by waiting a few seconds
 sleep 4
 
+# Reattach the gpu
+modprobe amdgpu
+driver-rebind "$VIRSH_GPU_VIDEO" vfio-pci amdgpu
+
+# Detach secondary gpu
+driver-rebind "$VIRSH_SECONDARY_GPU_VIDEO" radeon vfio-pci
+modprobe -r radeon
+
+# Reattach gpu audio; not needed for me since mine is permanently detached 
+#driver-rebind "$VIRSH_GPU_AUDIO" vfio-pci snd_hda_intel
+
+# Unbind secondary gpu audio
+#driver-rebind "$VIRSH_SECONDARY_GPU_AUDIO" snd_hda_intel vfio-pci
+
 # Unload all the vfio modules; not nessesary for me since i have them permanently loaded
 #modprobe -r vfio_pci
 #modprobe -r vfio_iommu_type1
 #modprobe -r vfio
-
-# Reattach the gpu
-modprobe amdgpu
-virsh nodedev-reattach $VIRSH_GPU_VIDEO
-
-# Detach secondary gpu
-virsh nodedev-detach $VIRSH_SECONDARY_GPU_VIDEO
-modprobe -r radeon
-
-# Reattach gpu audio; not needed for me since mine is permanently detached 
-#virsh nodedev-reattach $VIRSH_GPU_AUDIO
-
-# Unbind secondary gpu audio
-#virsh nodedev-detach $VIRSH_SECONDARY_GPU_AUDIO
 
 # Avoid race condition
 sleep 2
