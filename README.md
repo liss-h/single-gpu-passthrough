@@ -1,4 +1,4 @@
-# The What and Why of GPU stealing
+# The What and Why of Single GPU passthrough
 
 This is a variant/modification of the popular `Single GPU Passthrough` method 
 adapted for people who have one powerful and one mediocre/garbage GPU (like me).
@@ -57,7 +57,7 @@ Create this directory structure based with the provided files.
 For the scripts to work you need to copy driver-rebind.sh to a directory in your $PATH and rename it to driver-rebind, this is typically
 done by.
 
-> ### \# install ./driver-rebind.sh /usr/local/bin/driver-rebind
+> ### install ./driver-rebind.sh /usr/local/bin/driver-rebind
 
 <br>
 
