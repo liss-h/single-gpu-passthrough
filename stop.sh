@@ -9,7 +9,8 @@ set -u
 # Load the config file with our environmental variables
 source "/etc/libvirt/hooks/kvm.conf"
 
-if [[ -e /home/liss/.win10debugshutdown ]]; then
+
+if [[ -f "/home/liss/.win10debugshutdown" ]]; then
     echo "doing debug stop, nothing to do"
     exit 0
 fi
@@ -27,37 +28,35 @@ su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user stop pipe
 systemctl set-property --runtime -- user.slice AllowedCPUs=0-11
 
 # Unbind VTconsoles
-echo 0 > /sys/class/vtconsole/vtcon0/bind
-echo 0 > /sys/class/vtconsole/vtcon1/bind
+for vtcon in /sys/class/vtconsole/vtcon*; do
+    echo 0 > "$vtcon/bind"
+done
 
 # Avoid race condition by waiting a few seconds
-sleep 4
+sleep 2
 
-# Reattach the gpu
+# Rebind primary gpu
 modprobe amdgpu
-driver-rebind "$VIRSH_GPU_VIDEO" vfio-pci amdgpu
+driver-rebind "$VIRSH_GPU_VIDEO" amdgpu
 
-# Detach secondary gpu
-driver-rebind "$VIRSH_SECONDARY_GPU_VIDEO" radeon vfio-pci
+# Unbind secondary gpu
+driver-rebind "$VIRSH_SECONDARY_GPU_VIDEO" vfio-pci
 modprobe -r radeon
 
-# Reattach gpu audio; not needed for me since mine is permanently detached 
-#driver-rebind "$VIRSH_GPU_AUDIO" vfio-pci snd_hda_intel
+# Rebind gpu audio
+#modprobe snd_hda_intel
+#driver-rebind "$VIRSH_GPU_AUDIO" snd_hda_intel
 
 # Unbind secondary gpu audio
-#driver-rebind "$VIRSH_SECONDARY_GPU_AUDIO" snd_hda_intel vfio-pci
-
-# Unload all the vfio modules; not nessesary for me since i have them permanently loaded
-#modprobe -r vfio_pci
-#modprobe -r vfio_iommu_type1
-#modprobe -r vfio
+#driver-rebind "$VIRSH_SECONDARY_GPU_AUDIO" vfio-pci
 
 # Avoid race condition
 sleep 2
 
 # Rebind VTConsoles
-echo 1 > /sys/class/vtconsole/vtcon0/bind
-echo 1 > /sys/class/vtconsole/vtcon1/bind
+for vtcon in /sys/class/vtconsole/vtcon*; do
+    echo 1 > "$vtcon/bind"
+done
 
 # Restart the users dbus, to prevent gnome from not starting
 su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user restart dbus" - $VIRSH_USER

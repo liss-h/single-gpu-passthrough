@@ -2,25 +2,31 @@
 
 set -u
 
-pci_device="$1"
-old_driver="$2"
-new_driver="$3"
+device="$1"
+new_driver="/sys/bus/pci/drivers/$2"
+old_driver="$(find /sys/bus/pci/drivers -name $1 -exec dirname {} \; 2> /dev/null)"
 
-if [[ -e /sys/bus/pci/drivers/$new_driver/"$pci_device" ]]; then
-    echo "Already bound to requested driver. Exiting"
+if [[ -e "$new_driver/$device" ]]; then
+    echo "Notice: Device already bound to $new_driver. Exiting"
     exit 0
 fi
 
-if ! echo "$pci_device" >| /sys/bus/pci/drivers/"$old_driver"/unbind; then
-    echo "Error: Could not unbind from old driver. Aborting"
-    exit 1
+# Unbind
+if [[ -n  "$old_driver" ]]; then
+  if ! echo "$device" >| "$old_driver/unbind"; then
+      echo "Error: Device was not bound to $old_driver or could not unbind. Aborting" >&2
+      exit 1
+  fi
+else
+    echo "Notice: Device is not bound to any driver. Skipping unbind"
 fi
 
-if ! echo "$pci_device" >| /sys/bus/pci/drivers/"$new_driver"/bind; then
-    echo "Error: Could not bind to new driver. Attempting to revert"
-    
-    if ! echo "$pci_device" >| /sys/bus/pci/drivers/"$old_driver"/bind; then
-        echo "Error: Unable to revert"
+# Bind
+if ! echo "$device" >| "$new_driver/bind"; then
+    echo "Error: Could not bind to $new_driver. Attempting to revert to $old_driver" >&2
+
+    if ! echo "$device" >| "$old_driver/bind"; then
+        echo "Error: Unable to revert" >&2
         exit 1
     fi
 fi
