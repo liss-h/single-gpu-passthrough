@@ -67,7 +67,7 @@ done by.
 > If you are using a KVM switch like I am then it's possible that
 > if you press the switch button too slowly, the secondary GPU won't initialize properly, since it thinks there is no
 > display connected. So to solve that just press the switch button faster, like immediatly after
-> beginning to start the VM.
+> beginning to start the VM or ideally before.
 
 ### Race conditions
 > There are a few places in `start.sh` and `stop.sh` where artitficial delays are 
@@ -81,15 +81,6 @@ done by.
 > you might want to try setting your primary GPU 
 > (aka. the first GPU to output to a display) to your secondary GPU in the BIOS.
 
-### Wayland weirdness: startup issues, fallback to Xorg
-> This isn't specific to this project just a wayland issue in general, that I came across.
-> _Sometimes_ if you use two GPUs that use **different** drivers wayland will
-> refuse to start and gnome will always fall back to Xorg.
-> The fix for this is either disabling the other GPU (not ideal) or forcing it to use the 
-> same driver, this is obviously only possible if you have for example two GPUs
-> that can use `amdgpu`. You can see an example on how to apply that fix further 
-> down in the `My Setup->Kernel Parameters` section. This seems to be a known issue with
-> wayland.
 
 <br>
 
@@ -108,7 +99,7 @@ done by.
 - Gigabyte B550 AORUS Pro
 - AMD Ryzen R5 3600
 - AMD Radeon Vega 64 (to be passed through)
-- AMD Radeon HD 5450 (as the replacement gpu when the Vega is passed through)
+- AMD Radeon R5 240 OEM (as the replacement gpu when the Vega is passed through)
 
 <br>
 
@@ -156,7 +147,7 @@ That also ensures that all needed vfio kernel modules are permanently loaded.
 
 > ### /etc/modprobe.d/vfio.conf
 > ```
-> options vfio-pci ids=VEGA_AUDIO_DEVICE_ID,HD5450_VIDEO_DEVICE_ID,HD5450_AUDIO_DEVICE_ID
+> options vfio-pci ids=VEGA_AUDIO_DEVICE_ID,R5_240_VIDEO_DEVICE_ID,R5_240_AUDIO_DEVICE_ID
 > ```
 
 You can get the PCI device ids via `lspci -nnv`. Importantly this has to be the id in the square brackets at the end and not the one in front.
