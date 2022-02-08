@@ -18,11 +18,17 @@ fi
 # Save current gnome session
 su -c "gnome-session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
 
+# Stop scream
+#su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user stop scream" - $VIRSH_USER
+
 # Kill the display manager
 systemctl stop gdm.service
+killall gdm-wayland-session
+
+systemctl kill user@1000.service
 
 # Kill pipewire
-su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user stop pipewire pipewire-pulse" - $VIRSH_USER
+#su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user stop pipewire pipewire-pulse" - $VIRSH_USER
 
 # Reverse cpu core isolation
 systemctl set-property --runtime -- user.slice AllowedCPUs=0-11
@@ -36,12 +42,12 @@ done
 sleep 2
 
 # Rebind primary gpu
-modprobe amdgpu
+#modprobe amdgpu
 driver-rebind "$VIRSH_GPU_VIDEO" amdgpu
 
 # Unbind secondary gpu
 driver-rebind "$VIRSH_SECONDARY_GPU_VIDEO" vfio-pci
-modprobe -r radeon
+#modprobe -r radeon
 
 # Rebind gpu audio
 #modprobe snd_hda_intel
@@ -51,7 +57,7 @@ modprobe -r radeon
 #driver-rebind "$VIRSH_SECONDARY_GPU_AUDIO" vfio-pci
 
 # Avoid race condition
-sleep 2
+sleep 4
 
 # Rebind VTConsoles
 for vtcon in /sys/class/vtconsole/vtcon*; do
@@ -59,10 +65,7 @@ for vtcon in /sys/class/vtconsole/vtcon*; do
 done
 
 # Restart the users dbus, to prevent gnome from not starting
-su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user restart dbus" - $VIRSH_USER
+#su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user restart dbus" - $VIRSH_USER
 
 # Start display manager
 systemctl restart gdm.service
-
-# Stop scream
-su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user stop scream" - $VIRSH_USER
