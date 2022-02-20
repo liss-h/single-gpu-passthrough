@@ -9,8 +9,8 @@ set -u
 # Load the config file with our environmental variables
 source "/etc/libvirt/hooks/kvm.conf"
 
-
-if [[ -f "/home/liss/.win10debugshutdown" ]]; then
+# Exit if not supposed to revert
+if [[ -f "/home/$VIRSH_USER/.win10debugshutdown" ]]; then
     echo "doing debug stop, nothing to do"
     exit 0
 fi
@@ -18,20 +18,17 @@ fi
 # Save current gnome session
 su -c "gnome-session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
 
-# Stop scream
-#su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user stop scream" - $VIRSH_USER
-
 # Kill the display manager
 systemctl stop gdm.service
 killall gdm-wayland-session
 
-systemctl kill user@1000.service
-
-# Kill pipewire
-#su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user stop pipewire pipewire-pulse" - $VIRSH_USER
+# Kill all user desktop processes
+systemctl kill user@$(id -u $VIRSH_USER).service
 
 # Reverse cpu core isolation
 systemctl set-property --runtime -- user.slice AllowedCPUs=0-11
+systemctl set-property --runtime -- system.slice AllowedCPUs=0-11
+systemctl set-property --runtime -- init.scope AllowedCPUs=0-11
 
 # Unbind VTconsoles
 for vtcon in /sys/class/vtconsole/vtcon*; do
@@ -42,12 +39,12 @@ done
 sleep 2
 
 # Rebind primary gpu
-#modprobe amdgpu
+modprobe amdgpu
 driver-rebind "$VIRSH_GPU_VIDEO" amdgpu
 
 # Unbind secondary gpu
 driver-rebind "$VIRSH_SECONDARY_GPU_VIDEO" vfio-pci
-#modprobe -r radeon
+modprobe -r radeon
 
 # Rebind gpu audio
 #modprobe snd_hda_intel
@@ -63,9 +60,6 @@ sleep 4
 for vtcon in /sys/class/vtconsole/vtcon*; do
     echo 1 > "$vtcon/bind"
 done
-
-# Restart the users dbus, to prevent gnome from not starting
-#su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR systemctl --user restart dbus" - $VIRSH_USER
 
 # Start display manager
 systemctl restart gdm.service

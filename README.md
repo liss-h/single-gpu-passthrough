@@ -105,7 +105,7 @@ done by.
 
 ## Monitor Setup
 - Monitor 1 plugged into Vega 64
-- Monitor 2 plugged into a KVM switch that is plugged into both the Vega and HD 5450
+- Monitor 2 plugged into a KVM switch that is plugged into both the Vega and R5 240
 
 The reasoning behind this rather weird configuration is that I want
 to be able to access Linux even when the VM is booted, so only my primary Monitor
@@ -125,6 +125,14 @@ My user is in the following groups
 
 - `input` : for evdev passthrough
 - `kvm`, `qemu`, `libvirt` : for general vm stuff
+
+<br>
+
+## Dracut
+> ### /etc/dracut.conf.d/vfio.conf
+> ```
+> force\_drivers+="vfio vfio-pci vfio_iommu_type1 vfio_virqfd"
+> ```
 
 <br>
 
@@ -179,9 +187,3 @@ my gnome session after getting logged out by the VM being started or stopped. Si
 start every application by hand afterwards.
 
 <br>
-
-## VM Configuration
-
-I added the XML for my VM for reference.
-Most notably it has **CPU Pinning**, **[Looking Glass](https://looking-glass.io) shm**, **Keyboard/Mouse EVDev Passthrough** and **[Scream](https://github.com/duncanthrax/scream) over Ethernet** configured.
-(I actually don't use [Looking Glass](https://looking-glass.io/) I just tried it out and was too lazy to remove the shm device after I found a better setup).
