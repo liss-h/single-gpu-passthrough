@@ -6,7 +6,7 @@ set -x
 # Treat undefined variables as error
 set -u
 
-# Load the config file with our environmental variables
+# Load the config file
 source "/etc/libvirt/hooks/kvm.conf"
 
 # Exit if already in correct state
@@ -18,24 +18,23 @@ fi
 # Save current gnome session
 su -c "gnome-session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
 
-# Kill the display manager
-systemctl stop gdm.service
-killall gdm-wayland-session
+# Kill all user processes and display manager
+systemctl stop user-$(id -u $VIRSH_USER).slice gdm.service
 
-# Kill all user desktop processes
-systemctl kill user@$(id -u $VIRSH_USER).service
+# Avoid framebuffer still being used while unbinding
+sleep 2
 
-# Isolate CPU Cores from host
-systemctl set-property --runtime -- user.slice AllowedCPUs=0,1,6,7
-systemctl set-property --runtime -- system.slice AllowedCPUs=0,1,6,7
-systemctl set-property --runtime -- init.scope AllowedCPUs=0,1,6,7
+# Unbind framebuffer
+declare -a bound_framebuffers
 
-# Unbind VTconsoles
 for vtcon in /sys/class/vtconsole/vtcon*; do
-   echo 0 > "$vtcon/bind"
+   if [[ $(cat "$vtcon/bind") == 1 ]]; then
+       echo 0 > "$vtcon/bind"
+       bound_framebuffers+=("$vtcon")
+   fi
 done
 
-# Avoid a race condition by waiting a couple of seconds
+# Avoid framebuffer still being bound while GPU is unbinding
 sleep 2
 
 # Rebind secondary GPU
@@ -53,13 +52,21 @@ modprobe -r amdgpu
 #modprobe snd_hda_intel
 #driver-rebind "$VIRSH_SECONDARY_GPU_AUDIO" snd_hda_intel
 
-# Avoid race condition
-sleep 4
+# Avoid GPU not being initialized before rebinding framebuffer
+sleep 2
 
-# Rebind VTConsoles
-for vtcon in /sys/class/vtconsole/vtcon*; do
+# Rebind framebuffer
+for vtcon in "${bound_framebuffers[@]}"; do
     echo 1 > "$vtcon/bind"
 done
+
+# Isolate CPU cores from host
+systemctl set-property --runtime -- user.slice AllowedCPUs=0,1,6,7
+systemctl set-property --runtime -- system.slice AllowedCPUs=0,1,6,7
+systemctl set-property --runtime -- init.scope AllowedCPUs=0,1,6,7
+
+# Avoid Framebuffer not being bound before gdm is started
+sleep 2
 
 # Start display manager
 systemctl restart gdm.service
