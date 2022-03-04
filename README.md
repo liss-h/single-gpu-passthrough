@@ -26,10 +26,6 @@ For `start.sh` and `stop.sh` you need to keep the following in mind.
 
 - **Related:** If you **don't** want to use [gnome-session-restore](https://github.com/Clueliss/gnome-session-restore) remove or comment out the lines mentioning it.
 
-- If you **don't** use the `pipewire` audio server edit the lines mentioning `pipewire` and `pipewire-pulse` accordingly.
-
-- If you have more than two files in `/sys/class/vtconsole` you need to add additional lines where they are mentioned.
-
 <br>
 
 ## Creating the Directory Structure
@@ -37,18 +33,18 @@ Create this directory structure based with the provided files.
 **Replace `YOUR_VM_NAME` with the actual name of your VM.**
 
 ```cs
-📦/etc/libvirt
-|__📁hooks
-|  |__⚙️kvm.conf
-|  |__📃qemu
-|  |__📁qemu.d
-|  |  |__📁YOUR_VM_NAME
-|  |  |  |__📁prepare
-|  |  |  |  |__📁begin
-|  |  |  |  |  |__📃start.sh
-|  |  |  |__📁release
-|  |  |  |  |__📁end
-|  |  |  |  |  |__📃stop.sh
+📦 /etc/libvirt
+|__📁 hooks
+|  |__⚙️ kvm.conf
+|  |__📃 qemu
+|  |__📁 qemu.d
+|  |  |__📁 YOUR_VM_NAME
+|  |  |  |__📁 prepare
+|  |  |  |  |__📁 begin
+|  |  |  |  |  |__📃 start.sh
+|  |  |  |__📁 release
+|  |  |  |  |__📁 end
+|  |  |  |  |  |__📃 stop.sh
 ```
 
 <br>
@@ -57,7 +53,7 @@ Create this directory structure based with the provided files.
 For the scripts to work you need to copy driver-rebind.sh to a directory in your $PATH and rename it to driver-rebind, this is typically
 done by.
 
-> ### install ./driver-rebind.sh /usr/local/bin/driver-rebind
+> ### # install ./driver-rebind.sh /usr/local/bin/driver-rebind
 
 <br>
 
@@ -74,13 +70,6 @@ done by.
 > inserted via `sleep` to avoid race conditions, if the handover isn't working correctly
 > you could try increasing these values. I personally haven't extensively tested how low I can go
 > on these, since it works and once in my life I convinced myself that I should not touch a running system.
-
-### Xorg/X11 weirdness: startup issues
-> If for some reason Xorg does not want to start up after the VM stole the GPU
-> but always works when the GPU is given back
-> you might want to try setting your primary GPU 
-> (aka. the first GPU to output to a display) to your secondary GPU in the BIOS.
-
 
 <br>
 
@@ -120,6 +109,22 @@ a one monitor Linux, one monitor Windows setup.
 
 <br>
 
+## UEFI Setup (Gigabyte B550 Aorus Pro)
+```cs
+📁 Tweaker
+|__📁 Advanced CPU Settings
+|  |__⚙ SVM Mode := Enabled
+📁 Settings
+|__📁 IO Ports
+|  |__⚙ Initial Display Output := PCIe 1 Slot
+|__📁 Miscellaneous
+|  |__⚙ IOMMU := Enabled
+📁 Boot
+|__⚙ CSM Support := Disabled [to prevent black screen during bootup process]
+```
+
+<br>
+
 ## Groups
 My user is in the following groups
 
@@ -131,7 +136,7 @@ My user is in the following groups
 ## Dracut
 > ### /etc/dracut.conf.d/vfio.conf
 > ```
-> force\_drivers+="vfio vfio-pci vfio_iommu_type1 vfio_virqfd"
+> force_drivers+=" vfio vfio-pci vfio_iommu_type1 vfio_virqfd "
 > ```
 
 <br>
@@ -141,9 +146,14 @@ My user is in the following groups
 - `amd_iommu=on` : for full virtualization
 - `rd.driver.pre=vfio-pci` : force loading vfio-pci
 
-> ### /etc/default/grub
+> ### /etc/default/grub (required)
 > ```
 > GRUB_CMDLINE_LINUX="rhgb quiet amd_iommu=on rd.driver.pre=vfio-pci"
+> ```
+
+> ### /etc/default/grub (my config)
+> ```
+> GRUB_CMDLINE_LINUX="rhgb quiet preempt=full amd_iommu=on rd.driver.pre=vfio-pci systemd.unified_cgroup_hierarchy=1 crashkernel=auto"
 > ```
 
 <br>
@@ -161,7 +171,7 @@ That also ensures that all needed vfio kernel modules are permanently loaded.
 You can get the PCI device ids via `lspci -nnv`. Importantly this has to be the id in the square brackets at the end and not the one in front.
 So in this case `1002:aaf8` and **not** `08:00.1`.
 
-> ### lspci -nnv
+> ### $ lspci -nnv
 > ```
 > -- snip --
 >

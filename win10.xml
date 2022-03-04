@@ -22,8 +22,11 @@
     <emulatorpin cpuset='0-1,6-7'/>
     <iothreadpin iothread='1' cpuset='0-1,6-7'/>
   </cputune>
+  <resource>
+    <partition>/machine</partition>
+  </resource>
   <os>
-    <type arch='x86_64' machine='pc-q35-5.2'>hvm</type>
+    <type arch='x86_64' machine='pc-q35-6.1'>hvm</type>
     <loader readonly='yes' secure='yes' type='pflash'>/usr/share/edk2/ovmf/OVMF_CODE.fd</loader>
     <nvram>/var/lib/libvirt/qemu/nvram/win10_VARS.fd</nvram>
     <boot dev='hd'/>
@@ -59,120 +62,161 @@
   <devices>
     <emulator>/usr/bin/qemu-system-x86_64</emulator>
     <disk type='file' device='cdrom'>
-      <driver name='qemu' type='raw'/>
+      <driver name='qemu'/>
       <target dev='sdb' bus='sata'/>
       <readonly/>
+      <alias name='sata0-0-1'/>
       <address type='drive' controller='0' bus='0' target='0' unit='1'/>
     </disk>
     <disk type='block' device='disk'>
-      <driver name='qemu' type='raw' cache='none' io='threads' discard='unmap' iothread='1'/>
-      <source dev='/dev/disk/by-id/ata-Samsung_SSD_850_EVO_500GB_S21JNXAG681248R'/>
+      <driver name='qemu' type='raw' io='threads' discard='unmap' iothread='1'/>
+      <source dev='/dev/disk/by-id/ata-Samsung_SSD_850_EVO_500GB_S21JNXAG681248R' index='1'/>
+      <backingStore/>
       <target dev='vdb' bus='virtio'/>
+      <alias name='virtio-disk1'/>
       <address type='pci' domain='0x0000' bus='0x09' slot='0x00' function='0x0'/>
     </disk>
     <controller type='usb' index='0' model='qemu-xhci' ports='15'>
+      <alias name='usb'/>
       <address type='pci' domain='0x0000' bus='0x02' slot='0x00' function='0x0'/>
     </controller>
     <controller type='sata' index='0'>
+      <alias name='ide'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x1f' function='0x2'/>
     </controller>
-    <controller type='pci' index='0' model='pcie-root'/>
+    <controller type='pci' index='0' model='pcie-root'>
+      <alias name='pcie.0'/>
+    </controller>
     <controller type='pci' index='1' model='pcie-root-port'>
       <model name='pcie-root-port'/>
       <target chassis='1' port='0x8'/>
+      <alias name='pci.1'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x0' multifunction='on'/>
     </controller>
     <controller type='pci' index='2' model='pcie-root-port'>
       <model name='pcie-root-port'/>
       <target chassis='2' port='0x9'/>
+      <alias name='pci.2'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x1'/>
     </controller>
     <controller type='pci' index='3' model='pcie-root-port'>
       <model name='pcie-root-port'/>
       <target chassis='3' port='0xa'/>
+      <alias name='pci.3'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x2'/>
     </controller>
     <controller type='pci' index='4' model='pcie-root-port'>
       <model name='pcie-root-port'/>
       <target chassis='4' port='0xb'/>
+      <alias name='pci.4'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x3'/>
     </controller>
     <controller type='pci' index='5' model='pcie-root-port'>
       <model name='pcie-root-port'/>
       <target chassis='5' port='0xc'/>
+      <alias name='pci.5'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x4'/>
     </controller>
     <controller type='pci' index='6' model='pcie-root-port'>
       <model name='pcie-root-port'/>
       <target chassis='6' port='0xd'/>
+      <alias name='pci.6'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x5'/>
     </controller>
     <controller type='pci' index='7' model='pcie-root-port'>
       <model name='pcie-root-port'/>
       <target chassis='7' port='0xe'/>
+      <alias name='pci.7'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x6'/>
     </controller>
     <controller type='pci' index='8' model='pcie-to-pci-bridge'>
       <model name='pcie-pci-bridge'/>
+      <alias name='pci.8'/>
       <address type='pci' domain='0x0000' bus='0x01' slot='0x00' function='0x0'/>
     </controller>
     <controller type='pci' index='9' model='pcie-root-port'>
       <model name='pcie-root-port'/>
       <target chassis='9' port='0xf'/>
+      <alias name='pci.9'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x7'/>
     </controller>
     <controller type='pci' index='10' model='pcie-root-port'>
       <model name='pcie-root-port'/>
       <target chassis='10' port='0x10'/>
+      <alias name='pci.10'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0' multifunction='on'/>
     </controller>
     <controller type='pci' index='11' model='pcie-root-port'>
       <model name='pcie-root-port'/>
       <target chassis='11' port='0x11'/>
+      <alias name='pci.11'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x1'/>
     </controller>
     <controller type='pci' index='12' model='pcie-root-port'>
       <model name='pcie-root-port'/>
       <target chassis='12' port='0x12'/>
+      <alias name='pci.12'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x2'/>
     </controller>
     <controller type='pci' index='13' model='pcie-root-port'>
       <model name='pcie-root-port'/>
       <target chassis='13' port='0x13'/>
+      <alias name='pci.13'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x3'/>
     </controller>
     <controller type='virtio-serial' index='0'>
+      <alias name='virtio-serial0'/>
       <address type='pci' domain='0x0000' bus='0x0c' slot='0x00' function='0x0'/>
     </controller>
     <interface type='network'>
       <mac address='52:54:00:b0:1e:56'/>
-      <source network='default'/>
+      <source network='default' portid='f13a723b-a2c5-4582-9383-bfb86915d04f' bridge='virbr0'/>
+      <target dev='vnet0'/>
       <model type='virtio'/>
+      <alias name='net0'/>
       <address type='pci' domain='0x0000' bus='0x06' slot='0x00' function='0x0'/>
     </interface>
-    <console type='pty'>
+    <console type='pty' tty='/dev/pts/0'>
+      <source path='/dev/pts/0'/>
       <target type='virtio' port='0'/>
+      <alias name='console0'/>
     </console>
     <channel type='spicevmc'>
-      <target type='virtio' name='com.redhat.spice.0'/>
+      <target type='virtio' name='com.redhat.spice.0' state='connected'/>
+      <alias name='channel0'/>
       <address type='virtio-serial' controller='0' bus='0' port='1'/>
     </channel>
     <input type='mouse' bus='virtio'>
-      <address type='pci' domain='0x0000' bus='0x0a' slot='0x00' function='0x0'/>
-    </input>
-    <input type='keyboard' bus='virtio'>
+      <alias name='input0'/>
       <address type='pci' domain='0x0000' bus='0x07' slot='0x00' function='0x0'/>
     </input>
-    <input type='keyboard' bus='ps2'/>
-    <input type='mouse' bus='ps2'/>
-    <graphics type='spice' autoport='yes'>
-      <listen type='address'/>
+    <input type='keyboard' bus='virtio'>
+      <alias name='input1'/>
+      <address type='pci' domain='0x0000' bus='0x0a' slot='0x00' function='0x0'/>
+    </input>
+    <input type='evdev'>
+      <source dev='/dev/input/by-id/usb-Logitech_Gaming_Mouse_G402_6D9B306F5455-event-mouse'/>
+      <alias name='input2'/>
+    </input>
+    <input type='evdev'>
+      <source dev='/dev/input/by-id/usb-Corsair_Corsair_Gaming_K70_LUX_Keyboard_0C01802EAF0E98A859699312F5001BC0-if01-event-kbd' grab='all' repeat='on'/>
+      <alias name='input3'/>
+    </input>
+    <input type='mouse' bus='ps2'>
+      <alias name='input4'/>
+    </input>
+    <input type='keyboard' bus='ps2'>
+      <alias name='input5'/>
+    </input>
+    <graphics type='spice' port='5900' autoport='yes' listen='127.0.0.1'>
+      <listen type='address' address='127.0.0.1'/>
       <image compression='off'/>
       <gl enable='no'/>
     </graphics>
     <sound model='ich9'>
       <codec type='output'/>
       <audio id='1'/>
+      <alias name='sound0'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x1b' function='0x0'/>
     </sound>
     <audio id='1' type='jack'>
@@ -180,36 +224,47 @@
     </audio>
     <video>
       <model type='none'/>
+      <alias name='video0'/>
     </video>
     <hostdev mode='subsystem' type='pci' managed='yes'>
+      <driver name='vfio'/>
       <source>
         <address domain='0x0000' bus='0x0d' slot='0x00' function='0x0'/>
       </source>
+      <alias name='hostdev0'/>
       <address type='pci' domain='0x0000' bus='0x03' slot='0x00' function='0x0'/>
     </hostdev>
     <hostdev mode='subsystem' type='pci' managed='yes'>
+      <driver name='vfio'/>
       <source>
         <address domain='0x0000' bus='0x0d' slot='0x00' function='0x1'/>
       </source>
+      <alias name='hostdev1'/>
       <address type='pci' domain='0x0000' bus='0x04' slot='0x00' function='0x0'/>
     </hostdev>
     <redirdev bus='usb' type='spicevmc'>
+      <alias name='redir0'/>
       <address type='usb' bus='0' port='4'/>
     </redirdev>
     <redirdev bus='usb' type='spicevmc'>
+      <alias name='redir1'/>
       <address type='usb' bus='0' port='5'/>
     </redirdev>
     <memballoon model='virtio'>
+      <alias name='balloon0'/>
       <address type='pci' domain='0x0000' bus='0x05' slot='0x00' function='0x0'/>
     </memballoon>
   </devices>
+  <seclabel type='dynamic' model='selinux' relabel='yes'>
+    <label>system_u:system_r:svirt_t:s0:c202,c505</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c202,c505</imagelabel>
+  </seclabel>
+  <seclabel type='dynamic' model='dac' relabel='yes'>
+    <label>+1000:+107</label>
+    <imagelabel>+1000:+107</imagelabel>
+  </seclabel>
   <qemu:commandline>
-    <qemu:arg value='-object'/>
-    <qemu:arg value='input-linux,id=mouse1,evdev=/dev/input/by-id/usb-Logitech_Gaming_Mouse_G402_6D9B306F5455-event-mouse'/>
-    <qemu:arg value='-object'/>
-    <qemu:arg value='input-linux,id=kbd1,evdev=/dev/input/by-id/usb-Corsair_Corsair_Gaming_K70_LUX_Keyboard_0C01802EAF0E98A859699312F5001BC0-if01-event-kbd,grab_all=on,repeat=on'/>
     <qemu:env name='PIPEWIRE_RUNTIME_DIR' value='/run/user/1000'/>
-    <qemu:env name='PIPEWIRE_LATENCY' value='1024/48000'/>
+    <qemu:env name='PIPEWIRE_LATENCY' value='512/48000'/>
   </qemu:commandline>
 </domain>
-
