@@ -24,7 +24,7 @@ For `start.sh` and `stop.sh` you need to keep the following in mind.
 
 - If you **don't** use `gdm/gnome` edit the lines mentioning `gdm.service` accordingly.
 
-- **Related:** If you **don't** want to use [gnome-session-restore](https://github.com/Clueliss/gnome-session-restore) remove or comment out the lines mentioning it.
+- **Related:** If you **don't** want to use [gnome-session-restore](https://github.com/Clueliss/gnome-session-restore) or **don't** use gnome remove or comment out the lines mentioning it.
 
 <br>
 
@@ -50,7 +50,7 @@ Create this directory structure based with the provided files.
 <br>
 
 ## Installing driver-rebind.sh
-For the scripts to work you need to copy driver-rebind.sh to a directory in your $PATH and rename it to driver-rebind, this is typically
+For the scripts to work you need to copy driver-rebind.sh to a directory in your $PATH (typically /usr/local/bin) and rename it to driver-rebind, this can be
 done by.
 
 > ### # install ./driver-rebind.sh /usr/local/bin/driver-rebind
@@ -58,6 +58,15 @@ done by.
 <br>
 
 ## Troubleshooting
+
+### VirtIO driver taking infinite time to install or error about class not being initialized
+> This seems to be some kind of bug in Windows. 
+> Changing the machine type to ```<type arch="x86_64" machine="pc-q35-5.1">hvm</type>``` fixes this bug.
+
+### GPU enters infinite reset loop once it has been used by VM (```*ERROR* atombios stuck in loop for more than 20secs aborting```)
+> I am not sure why this happens, if I had to guess it has something to do with the GPU not being uninitialized properly.
+> The fix is to install the AMD GPU drivers in the VM, once they are installed this behaviour stops. This means you should probably do the windows install
+> without GPU passthrough since everytime the installer forces a restart this bug apperears and requires a full machine reboot.
 
 ### Primary monitor switches to Windows just fine but secondary stays black
 > If you are using a KVM switch like I am then it's possible that
@@ -69,7 +78,7 @@ done by.
 > There are a few places in `start.sh` and `stop.sh` where artitficial delays are 
 > inserted via `sleep` to avoid race conditions, if the handover isn't working correctly
 > you could try increasing these values. I personally haven't extensively tested how low I can go
-> on these, since it works and once in my life I convinced myself that I should not touch a running system.
+> on these.
 
 <br>
 
@@ -117,6 +126,8 @@ a one monitor Linux, one monitor Windows setup.
 📁 Settings
 |__📁 IO Ports
 |  |__⚙ Initial Display Output := PCIe 1 Slot
+|  |__⚙ Above 4G Decoding := Disabled [breaks GPU reinit after VM shutdown; '*ERROR* atombios stuck in loop for more than 20secs aborting']
+|  |__⚙ Re-Size BAR Support := Disabled [same as above]
 |__📁 Miscellaneous
 |  |__⚙ IOMMU := Enabled
 📁 Boot
@@ -192,7 +203,7 @@ So in this case `1002:aaf8` and **not** `08:00.1`.
 
 ## Session Restore
 
-I use a tool called [gnome-session-restore](https://github.com/Clueliss/gnome-session-restore) to restore
+I use a tool called [gnome-session-restore](https://github.com/Clueliss/gnome-session-restore) (also written by me) to restore
 my gnome session after getting logged out by the VM being started or stopped. Since I found it annoying that I had to
 start every application by hand afterwards.
 
