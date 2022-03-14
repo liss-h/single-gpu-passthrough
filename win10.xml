@@ -26,10 +26,9 @@
     <partition>/machine</partition>
   </resource>
   <os>
-    <type arch='x86_64' machine='pc-q35-6.1'>hvm</type>
-    <loader readonly='yes' secure='yes' type='pflash'>/usr/share/edk2/ovmf/OVMF_CODE.fd</loader>
-    <nvram>/var/lib/libvirt/qemu/nvram/win10_VARS.fd</nvram>
-    <boot dev='hd'/>
+    <type arch='x86_64' machine='pc-q35-5.1'>hvm</type>
+    <loader readonly='yes' secure='yes' type='pflash'>/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd</loader>
+    <nvram template='/usr/share/edk2/ovmf/OVMF_VARS.secboot.fd'>/var/lib/libvirt/qemu/nvram/win10_VARS.fd</nvram>
   </os>
   <features>
     <acpi/>
@@ -62,17 +61,29 @@
   <devices>
     <emulator>/usr/bin/qemu-system-x86_64</emulator>
     <disk type='file' device='cdrom'>
-      <driver name='qemu'/>
+      <driver name='qemu' type='raw'/>
+      <source file='/home/liss/Netzwerk/lpf-nas/isos/Win10_21H2_German_x64.iso' index='3'/>
+      <backingStore/>
       <target dev='sdb' bus='sata'/>
       <readonly/>
       <alias name='sata0-0-1'/>
       <address type='drive' controller='0' bus='0' target='0' unit='1'/>
+    </disk>
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='/home/liss/Netzwerk/lpf-nas/isos/virtio-win-1.9.19-1.el8.iso' index='2'/>
+      <backingStore/>
+      <target dev='sdc' bus='sata'/>
+      <readonly/>
+      <alias name='sata0-0-2'/>
+      <address type='drive' controller='0' bus='0' target='0' unit='2'/>
     </disk>
     <disk type='block' device='disk'>
       <driver name='qemu' type='raw' io='threads' discard='unmap' iothread='1'/>
       <source dev='/dev/disk/by-id/ata-Samsung_SSD_850_EVO_500GB_S21JNXAG681248R' index='1'/>
       <backingStore/>
       <target dev='vdb' bus='virtio'/>
+      <boot order='1'/>
       <alias name='virtio-disk1'/>
       <address type='pci' domain='0x0000' bus='0x09' slot='0x00' function='0x0'/>
     </disk>
@@ -170,19 +181,19 @@
     </controller>
     <interface type='network'>
       <mac address='52:54:00:b0:1e:56'/>
-      <source network='default' portid='f13a723b-a2c5-4582-9383-bfb86915d04f' bridge='virbr0'/>
-      <target dev='vnet0'/>
+      <source network='default' portid='49d7a0ce-006f-4658-856e-fbe69bce0491' bridge='virbr0'/>
+      <target dev='vnet1'/>
       <model type='virtio'/>
       <alias name='net0'/>
       <address type='pci' domain='0x0000' bus='0x06' slot='0x00' function='0x0'/>
     </interface>
-    <console type='pty' tty='/dev/pts/0'>
-      <source path='/dev/pts/0'/>
+    <console type='pty' tty='/dev/pts/2'>
+      <source path='/dev/pts/2'/>
       <target type='virtio' port='0'/>
       <alias name='console0'/>
     </console>
     <channel type='spicevmc'>
-      <target type='virtio' name='com.redhat.spice.0' state='connected'/>
+      <target type='virtio' name='com.redhat.spice.0' state='disconnected'/>
       <alias name='channel0'/>
       <address type='virtio-serial' controller='0' bus='0' port='1'/>
     </channel>
@@ -208,11 +219,12 @@
     <input type='keyboard' bus='ps2'>
       <alias name='input5'/>
     </input>
-    <graphics type='spice' port='5900' autoport='yes' listen='127.0.0.1'>
-      <listen type='address' address='127.0.0.1'/>
-      <image compression='off'/>
-      <gl enable='no'/>
-    </graphics>
+    <tpm model='tpm-tis'>
+      <backend type='passthrough'>
+        <device path='/dev/tpm0'/>
+      </backend>
+      <alias name='tpm0'/>
+    </tpm>
     <sound model='ich9'>
       <codec type='output'/>
       <audio id='1'/>
@@ -256,8 +268,8 @@
     </memballoon>
   </devices>
   <seclabel type='dynamic' model='selinux' relabel='yes'>
-    <label>system_u:system_r:svirt_t:s0:c202,c505</label>
-    <imagelabel>system_u:object_r:svirt_image_t:s0:c202,c505</imagelabel>
+    <label>system_u:system_r:svirt_t:s0:c102,c203</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c102,c203</imagelabel>
   </seclabel>
   <seclabel type='dynamic' model='dac' relabel='yes'>
     <label>+1000:+107</label>
