@@ -154,17 +154,17 @@ My user is in the following groups
 
 ## Kernel parameters
 
-- `amd_iommu=on` : for full virtualization
-- `rd.driver.pre=vfio-pci` : force loading vfio-pci
+- `amd_iommu=on` : enable IOMMU support
+- `iommu=pt` : prevent linux from touching devices which cannot be passed through
 
 > ### /etc/default/grub (required)
 > ```
-> GRUB_CMDLINE_LINUX="rhgb quiet amd_iommu=on rd.driver.pre=vfio-pci"
+> GRUB_CMDLINE_LINUX="rhgb quiet amd_iommu=on iommu=pt"
 > ```
 
 > ### /etc/default/grub (my config)
 > ```
-> GRUB_CMDLINE_LINUX="rhgb quiet preempt=full amd_iommu=on rd.driver.pre=vfio-pci systemd.unified_cgroup_hierarchy=1 crashkernel=auto"
+> GRUB_CMDLINE_LINUX="rhgb quiet preempt=full amd_iommu=on iommu=pt systemd.unified_cgroup_hierarchy=1 crashkernel=auto"
 > ```
 
 <br>
