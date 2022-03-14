@@ -1,10 +1,6 @@
 #!/bin/bash
 
-# Display each command after execution
-set -x
-
-# Treat undefined variables as error
-set -u
+set -xuo pipefail
 
 # Load the config file
 source "/etc/libvirt/hooks/kvm.conf"
@@ -15,11 +11,12 @@ if [[ -e "/sys/bus/pci/drivers/vfio-pci/$VIRSH_GPU_VIDEO" ]] && [[ -e "/sys/bus/
     exit 0
 fi
 
-# Save current gnome session
+# Save and quit current gnome session
 su -c "gnome-session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
+su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR gnome-session-quit --logout --no-prompt --force" - $VIRSH_USER
 
-# Kill all user processes and display manager
-systemctl stop user-$(id -u $VIRSH_USER).slice gdm.service
+# Stop display manager
+systemctl stop gdm.service
 
 # Avoid framebuffer still being used while unbinding
 sleep 2

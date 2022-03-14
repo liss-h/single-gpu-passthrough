@@ -1,24 +1,22 @@
 #!/bin/bash
 
-# Display each command after execution
-set -x
+set -xuo pipefail
 
-# Treat undefined variables as error
-set -u
-
-# Load the config file with our environmental variables
+# Load the config file
 source "/etc/libvirt/hooks/kvm.conf"
 
+# Exit if debug shutdown requested
 if [[ -f "/home/liss/.win10debugshutdown" ]]; then
     echo "doing debug stop, nothing to do"
     exit 0
 fi
 
-# Save current gnome session
+# Save and quit current gnome session
 su -c "gnome-session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
+su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR gnome-session-quit --logout --no-prompt --force" - $VIRSH_USER
 
-# Kill all user processes and display manager
-systemctl stop user-$(id -u $VIRSH_USER).slice gdm.service
+# Stop display manager
+systemctl stop gdm.service
 
 # Avoid framebuffers being used while unbinding
 sleep 2
