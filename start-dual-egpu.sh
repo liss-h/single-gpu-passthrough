@@ -1,6 +1,11 @@
 #!/bin/bash
 
-set -xuo pipefail
+# Display each command after execution
+set -x
+
+# Treat undefined variables as error
+set -u
+
 
 # Load the config file
 source "/etc/libvirt/hooks/kvm.conf"
@@ -11,9 +16,8 @@ if [[ -e "/sys/bus/pci/drivers/vfio-pci/$VIRSH_GPU_VIDEO" ]] && [[ -e "/sys/bus/
     exit 0
 fi
 
-# Save and quit current gnome session
-su -c "gnome-session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
-su -c "DBUS_SESSION_BUS_ADDRESS=$VIRSH_USER_DBUS_ADDR gnome-session-quit --logout --no-prompt --force" - $VIRSH_USER
+# Save current gnome session
+# su -c "gnome-session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
 
 # Stop display manager
 systemctl stop gdm.service
@@ -36,7 +40,7 @@ sleep 2
 
 # Rebind secondary GPU
 modprobe radeon
-driver-rebind "$VIRSH_SECONDARY_GPU_VIDEO" radeon # amdgpu
+driver-rebind "$VIRSH_SECONDARY_GPU_VIDEO" radeon
 
 # Unbind primary GPU
 driver-rebind "$VIRSH_GPU_VIDEO" vfio-pci

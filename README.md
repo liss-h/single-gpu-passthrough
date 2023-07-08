@@ -1,14 +1,14 @@
 # The What and Why of Single GPU passthrough
 
-This is a variant/modification of the popular `Single GPU Passthrough` method 
-adapted for people who have one powerful and one mediocre/garbage GPU (like me).
+This is a variant of the popular `Single GPU Passthrough` method
+adapted for people who have one powerful and one mediocre eGPU/iGPU.
 This allows you to  use Windows and Linux in parallel,
 instead of being confined to Windows as soon as the VM starts. 
 
-**Note: This isn't a comprehensive guide on how to do GPU passthrough, just everything (i think)
+**Note: This isn't a comprehensive guide on how to do GPU passthrough, just everything (I think)
 there is to know about my specific setup and how to replicate it. Please refer to the [Arch Wiki](https://wiki.archlinux.org/title/PCI_passthrough_via_OVMF) if you are new to GPU Passthrough.**
 
-**Note: The scripts are adapted to AMD hardware. I don't own and NVidia GPUs and as far as I know the 
+**Note: The scripts are adapted to AMD hardware. I don't own any NVidia GPUs and as far as I know the 
 scripts will definitely not work with NVidia setups and would need additional commands for that.
 Please refer to related `Single GPU Passthrough` repos for more information.**
 
@@ -57,11 +57,13 @@ done by.
 
 <br>
 
+`driver-rebind` is a custom script I wrote that rebinds a given device to a different driver. I found this works better than the other solutions I found online.
+
 ## Troubleshooting
 
 ### VirtIO driver taking infinite time to install or error about class not being initialized
-> This seems to be some kind of bug in Windows. 
-> Changing the machine type to ```<type arch="x86_64" machine="pc-q35-5.1">hvm</type>``` fixes this bug.
+> This seems to be some kind of bug in some versions of Windows 10.
+> Changing the machine type to ```<type arch="x86_64" machine="pc-q35-5.1">hvm</type>``` might fix this bug.
 
 ### GPU enters infinite reset loop once it has been used by VM (```*ERROR* atombios stuck in loop for more than 20secs aborting```)
 > I am not sure why this happens, if I had to guess it has something to do with the GPU not being uninitialized properly.
@@ -69,7 +71,7 @@ done by.
 > without GPU passthrough since everytime the installer forces a restart this bug apperears and requires a full machine reboot.
 
 ### Primary monitor switches to Windows just fine but secondary stays black
-> If you are using a KVM switch like I am then it's possible that
+> If you are using a KVM switch then it's possible that
 > if you press the switch button too slowly, the secondary GPU won't initialize properly, since it thinks there is no
 > display connected. So to solve that just press the switch button faster, like immediatly after
 > beginning to start the VM or ideally before.
@@ -85,7 +87,7 @@ done by.
 # My Setup
 
 ## Software
-- Fedora 35 Workstation
+- Fedora 38 Workstation
 - Gnome
 - Pipewire
 - Wayland
@@ -93,28 +95,39 @@ done by.
 
 <br>
 
-## Hardware
+## Known working Hardware
+### Dual eGPU
 - Gigabyte B550 AORUS Pro
 - AMD Ryzen R5 3600
 - AMD Radeon Vega 64 (to be passed through)
 - AMD Radeon R5 240 OEM (as the replacement gpu when the Vega is passed through)
+### eGPU + iGPU
+- Asus ROG STRIX Z790-F
+- Intel i9-13900k
+- AMD Radeon RX6800
+- Intel iGPU
 
 <br>
 
-## Monitor Setup
-- Monitor 1 plugged into Vega 64
-- Monitor 2 plugged into a KVM switch that is plugged into both the Vega and R5 240
+## Monitor Setup Variants
+### With KVM switch
+- Monitor 1 plugged into primary GPU
+- Monitor 2 plugged into a KVM switch that is plugged into both primary and secondary GPU
+
+### Without KVM switch
+- Monitor 1 plugged into primary GPU
+- Monitor 2 plugged into secondary GPU
 
 The reasoning behind this rather weird configuration is that I want
 to be able to access Linux even when the VM is booted, so only my primary Monitor
-gets stolen by the VM. The advantage of this is that I don't have to trust Windows
+gets claimed by the VM. The advantage of this is that I don't have to trust Windows
 to handle Discord and other applications, so it can focus solely on the game I am running and hopefully do less weird things.
 
 So my setup seemlessly* transitions from being a dual monitor Linux setup to
 a one monitor Linux, one monitor Windows setup.
 
-*: It's obviously not completely seemless since gdm needs to be restarted on every GPU handover. And I need to press
-    the switch button on my KVM switch.
+*: It's obviously not completely seemless since gdm needs to be restarted on every GPU handover. And you may need to press
+    the switch button on the KVM switch.
 
 <br>
 
@@ -154,17 +167,19 @@ My user is in the following groups
 
 ## Kernel parameters
 
-- `amd_iommu=on` : enable IOMMU support
+- `amd_iommu=on`/`intel_iommu=on` : enable IOMMU support
 - `iommu=pt` : prevent linux from touching devices which cannot be passed through
+- `pci=nommconf`: This seems to be necessary for my Intel setup to work. It basically tells the kernel to not read the memory mapped
+    PCI configuration registers, which are known to cause problems on some hardware configurations.
 
-> ### /etc/default/grub (required)
+> ### /etc/default/grub (example)
 > ```
 > GRUB_CMDLINE_LINUX="rhgb quiet amd_iommu=on iommu=pt"
 > ```
 
 > ### /etc/default/grub (my config)
 > ```
-> GRUB_CMDLINE_LINUX="rhgb quiet preempt=full amd_iommu=on iommu=pt systemd.unified_cgroup_hierarchy=1 crashkernel=auto"
+> GRUB_CMDLINE_LINUX="rhgb quiet intel_iommu=on iommu=pt pci=nommconf"
 > ```
 
 <br>
@@ -174,9 +189,9 @@ My user is in the following groups
 I have my both my GPU HDMI-Audio devices permanently claimed, since i don't use them anyways.
 That also ensures that all needed vfio kernel modules are permanently loaded.
 
-> ### /etc/modprobe.d/vfio.conf
+> ### /etc/modprobe.d/vfio.conf (optional)
 > ```
-> options vfio-pci ids=VEGA_AUDIO_DEVICE_ID,R5_240_VIDEO_DEVICE_ID,R5_240_AUDIO_DEVICE_ID
+> options vfio-pci ids=OPTIONAL_IDS_OF_THINGS_TO_PERMANENTLY_CLAIM
 > ```
 
 You can get the PCI device ids via `lspci -nnv`. Importantly this has to be the id in the square brackets at the end and not the one in front.
@@ -191,7 +206,7 @@ So in this case `1002:aaf8` and **not** `08:00.1`.
 >	Flags: fast devsel, IRQ 58, IOMMU group 17
 >	Memory at fcea0000 (32-bit, non-prefetchable) [size=16K]
 >	Capabilities: <access denied>
->	Kernel driver in use: vfio-pci
+>	Kernel driver in use: amdgpu
 >	Kernel modules: snd_hda_intel
 >
 > -- snip --
