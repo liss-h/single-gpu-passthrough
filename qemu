@@ -1,13 +1,18 @@
 #!/bin/bash
-#
-# Author: Sebastiaan Meijer (sebastiaan@passthroughpo.st)
-#
+
 # Copy this file to /etc/libvirt/hooks, make sure it's called "qemu".
 # After this file is installed, restart libvirt.
 # From now on, you can easily add per-guest qemu hooks.
 # Add your hooks in /etc/libvirt/hooks/qemu.d/vm_name/hook_name/state_name.
 # For a list of available hooks, please refer to https://www.libvirt.org/hooks.html
-#
+
+set -eu
+set -o pipefail
+shopt -s nullglob
+
+if [[ -e /.vmdebug ]]; then
+    exit 0
+fi
 
 GUEST_NAME="$1"
 HOOK_NAME="$2"
@@ -17,17 +22,38 @@ MISC="${@:4}"
 BASEDIR="$(dirname $0)"
 
 HOOKPATH="$BASEDIR/qemu.d/$GUEST_NAME/$HOOK_NAME/$STATE_NAME"
+LOGPATH="/var/log/libvirt/qemu/${GUEST_NAME}_${HOOK_NAME}_${STATE_NAME}.log"
 
-set -e # If a script exits with an error, we should as well.
+log() {
+    echo "$@" | tee "$LOGPATH"
+}
 
-# check if it's a non-empty executable file
-if [ -f "$HOOKPATH" ] && [ -s "$HOOKPATH" ] && [ -x "$HOOKPATH" ]; then
-    eval \"$HOOKPATH\" "$@"
-elif [ -d "$HOOKPATH" ]; then
-    while read file; do
-        # check for null string
-        if [ ! -z "$file" ]; then
-          eval \"$file\" "$@"
-        fi
-    done <<< "$(find -L "$HOOKPATH" -maxdepth 1 -type f -executable -print;)"
+clear_log() {
+    echo "" > "$LOGPATH"
+}
+
+run_hook() {
+    HOOK="$1"
+
+    if [[ -f "$HOOK" ]] && [[ -x "$HOOK" ]]; then
+        log "Info: Executing hook: $HOOK"
+        "$HOOK" 2>&1 | tee "$LOGPATH"
+    else
+        log "Warning: found non-executable hook: $HOOK. Ignoring."
+    fi
+}
+
+
+# Run hook(s)
+if [[ -f "$HOOKPATH" ]]; then
+   clear_log
+   run_hook "$HOOKPATH"
+elif [[ -d "$HOOKPATH" ]]; then
+    clear_log
+    for hook in "$HOOKPATH"/*; do
+        run_hook "$hook"
+    done
+else
+    log "Warning: $HOOKPATH is neither a file nor a directory. Ignoring."
 fi
+
