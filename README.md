@@ -70,7 +70,7 @@ done by.
 > The fix is to install the AMD GPU drivers in the VM, once they are installed this behaviour stops. This means you should probably do the windows install
 > without GPU passthrough since everytime the installer forces a restart this bug apperears and requires a full machine reboot.
 
-### Primary monitor switches to Windows just fine but secondary stays black
+### Primary monitor switches to Windows just fine but secondary stays black (KVM switch used)
 > If you are using a KVM switch then it's possible that
 > if you press the switch button too slowly, the secondary GPU won't initialize properly, since it thinks there is no
 > display connected. So to solve that just press the switch button faster, like immediatly after
@@ -104,7 +104,7 @@ done by.
 ### eGPU + iGPU
 - Asus ROG STRIX Z790-F
 - Intel i9-13900k
-- AMD Radeon RX6800
+- AMD Radeon RX 6800
 - Intel iGPU
 
 <br>
@@ -131,7 +131,24 @@ a one monitor Linux, one monitor Windows setup.
 
 <br>
 
-## UEFI Setup (Gigabyte B550 Aorus Pro)
+## UEFI Setup
+
+### Asus Strix Z790-F (ReBAR enabled)
+```cs
+📁 Advanced
+|__📁 PCI Subsystem Settings
+|  |__⚙ Above 4G Decoding := Enabled
+|  |__⚙ Re-Size BAR Support := Enabled
+|__📁 System Agent (SA) Configuration
+|  |__⚙ VT-d := Enabled
+|  |__⚙ Control Iommu Pro-boot Behavior := Enable IOMMU
+📁 Boot
+|__📁 CSM (Compatibility Support Module)
+|  |__⚙ Launch CSM := Disabled
+```
+
+
+### Gigabyte B550 Aorus Pro (ReBAR had to be disabled)
 ```cs
 📁 Tweaker
 |__📁 Advanced CPU Settings
@@ -169,17 +186,15 @@ My user is in the following groups
 
 - `amd_iommu=on`/`intel_iommu=on` : enable IOMMU support
 - `iommu=pt` : prevent linux from touching devices which cannot be passed through
-- `pci=nommconf`: This seems to be necessary for my Intel setup to work. It basically tells the kernel to not read the memory mapped
-    PCI configuration registers, which are known to cause problems on some hardware configurations.
 
-> ### /etc/default/grub (example)
+> ### /etc/default/grub (AMD)
 > ```
 > GRUB_CMDLINE_LINUX="rhgb quiet amd_iommu=on iommu=pt"
 > ```
 
-> ### /etc/default/grub (my config)
+> ### /etc/default/grub (Intel)
 > ```
-> GRUB_CMDLINE_LINUX="rhgb quiet intel_iommu=on iommu=pt pci=nommconf"
+> GRUB_CMDLINE_LINUX="rhgb quiet intel_iommu=on iommu=pt"
 > ```
 
 <br>
@@ -213,6 +228,43 @@ So in this case `1002:aaf8` and **not** `08:00.1`.
 > ```
 
 **Don't forget to run `dracut -fv` or equivalent afterwards.**
+
+<br>
+
+## Resizeable BAR
+QEMU currently does not support exposing ReBAR capabilities fully. I.e. the VM cannot resize the BARs itself.
+This means we must resize the BARs ourselves. This [guide from Level1Techs](https://forum.level1techs.com/t/vfio-2023-radeon-7000-edition-wip/199252) however pointed me to this solution.
+
+First check that ReBAR is even working
+> ### # lspci -vv
+> ```
+> -- snip --
+> 03:00.0 VGA compatible controller: Advanced Micro Devices, Inc. [AMD/ATI] Navi 21 [Radeon RX 6800/6800 XT / 6900 XT] (rev c3) (prog-if 00 [VGA controller])
+>   Subsystem: Advanced Micro Devices, Inc. [AMD/ATI] Radeon RX 6900 XT
+>   -- snip --
+>   
+>   Capabilities: [200 v1] Physical Resizable BAR
+>       BAR 0: current size: 16GB, supported: 256MB 512MB 1GB 2GB 4GB 8GB 16GB
+>       BAR 2: current size: 256MB, supported: 2MB 4MB 8MB 16MB 32MB 64MB 128MB 256MB
+>   
+>   -- snip --
+>     
+> -- snip --
+> ```
+
+<br>
+
+Now that we confirmed that ReBAR indeed works, we now need to find working sizes for BAR 0 and BAR 2.
+On my system `8GB`/`8MB` works flawlessly, and according to Level1Techs those values should work
+for most systems. For some unknown reason the default sizes for my RX 6800 of `256GB`/`16MB` do not work and
+result in a black screen in the VM.
+
+The start script (only the egpu-igpu one, because I never got it to work on the other system) contains
+some lines that resize the BARs to their respective sizes before VM bootup. The values echoed into the pseudo-files correspond to powers of two (in megabytes) of the wanted BAR size. For example a wanted BAR size of `8GB` corresponds to the value `13` echoed into the pseudo-file because `2^13MB = 8192MB = 8GB`.
+
+When setting the BAR sizes it is important that the GPU is not used by _anything_, not even the driver. To achieve
+this I have placed the BAR resizing after the GPU was successfully bound to `vfio-pci`. Of course `vfio-pci` counts as a driver using the card, so it needs to be unloaded first after which the BARs can be resized and
+then `vfio-pci` can be reloaded.
 
 <br>
 

@@ -1,15 +1,14 @@
 <domain type='kvm' id='1' xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'>
   <name>win10</name>
-  <uuid>92ba16b2-3d8c-4416-9bf7-3d2017b8f5d1</uuid>
+  <uuid>a81e1509-9680-48f3-b610-b15a5e87e487</uuid>
   <metadata>
     <libosinfo:libosinfo xmlns:libosinfo="http://libosinfo.org/xmlns/libvirt/domain/1.0">
-      <libosinfo:os id="http://microsoft.com/win/10"/>
+      <libosinfo:os id="http://microsoft.com/win/11"/>
     </libosinfo:libosinfo>
   </metadata>
   <memory unit='KiB'>50331648</memory>
   <currentMemory unit='KiB'>50331648</currentMemory>
   <vcpu placement='static'>12</vcpu>
-  <iothreads>1</iothreads>
   <cputune>
     <vcpupin vcpu='0' cpuset='0'/>
     <vcpupin vcpu='1' cpuset='1'/>
@@ -24,7 +23,6 @@
     <vcpupin vcpu='10' cpuset='10'/>
     <vcpupin vcpu='11' cpuset='11'/>
     <emulatorpin cpuset='12-15'/>
-    <iothreadpin iothread='1' cpuset='12-15'/>
   </cputune>
   <resource>
     <partition>/machine</partition>
@@ -38,11 +36,11 @@
   <features>
     <acpi/>
     <apic/>
-    <hyperv mode='custom'>
-      <relaxed state='on'/>
-      <vapic state='on'/>
-      <spinlocks state='on' retries='8191'/>
+    <hyperv mode='passthrough'>
     </hyperv>
+    <kvm>
+      <hidden state='on'/>
+    </kvm>
     <vmport state='off'/>
     <smm state='on'/>
   </features>
@@ -66,30 +64,22 @@
     <emulator>/usr/bin/qemu-system-x86_64</emulator>
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
-      <source file='/home/liss/Downloads/Win11_22H2_German_x64v1.iso' index='3'/>
+      <source file='/home/liss/Downloads/Win11_22H2_German_x64v1.iso' index='2'/>
       <backingStore/>
       <target dev='sdb' bus='sata'/>
       <readonly/>
+      <boot order='1'/>
       <alias name='sata0-0-1'/>
       <address type='drive' controller='0' bus='0' target='0' unit='1'/>
     </disk>
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>
-      <source file='/home/liss/Downloads/virtio-win-0.1.229.iso' index='2'/>
+      <source file='/home/liss/Downloads/virtio-win-0.1.229.iso' index='1'/>
       <backingStore/>
       <target dev='sdc' bus='sata'/>
       <readonly/>
       <alias name='sata0-0-2'/>
       <address type='drive' controller='0' bus='0' target='0' unit='2'/>
-    </disk>
-    <disk type='block' device='disk'>
-      <driver name='qemu' type='raw' io='threads' discard='unmap' iothread='1' queues='4'/>
-      <source dev='/dev/disk/by-id/ata-Samsung_SSD_850_EVO_500GB_S21JNXAG681248R' index='1'/>
-      <backingStore/>
-      <target dev='vdb' bus='virtio'/>
-      <boot order='1'/>
-      <alias name='virtio-disk1'/>
-      <address type='pci' domain='0x0000' bus='0x09' slot='0x00' function='0x0'/>
     </disk>
     <controller type='usb' index='0' model='qemu-xhci'>
       <alias name='usb'/>
@@ -197,7 +187,7 @@
     </controller>
     <interface type='network'>
       <mac address='52:54:00:b0:1e:56'/>
-      <source network='default' portid='b32312d0-afb3-44fe-9b6c-949f67415935' bridge='virbr0'/>
+      <source network='default' portid='632e31c1-8da9-4983-8f8c-00de9943742a' bridge='virbr0'/>
       <target dev='vnet0'/>
       <model type='virtio'/>
       <alias name='net0'/>
@@ -249,7 +239,7 @@
         <address domain='0x0000' bus='0x03' slot='0x00' function='0x0'/>
       </source>
       <alias name='hostdev0'/>
-      <address type='pci' domain='0x0000' bus='0x03' slot='0x00' function='0x0'/>
+      <address type='pci' domain='0x0000' bus='0x03' slot='0x00' function='0x0' multifunction='on'/>
     </hostdev>
     <hostdev mode='subsystem' type='pci' managed='yes'>
       <driver name='vfio'/>
@@ -275,14 +265,22 @@
       <alias name='hostdev3'/>
       <address type='pci' domain='0x0000' bus='0x0d' slot='0x00' function='0x0'/>
     </hostdev>
+    <hostdev mode='subsystem' type='pci' managed='yes'>
+      <driver name='vfio'/>
+      <source>
+        <address domain='0x0000' bus='0x05' slot='0x00' function='0x0'/>
+      </source>
+      <alias name='hostdev4'/>
+      <address type='pci' domain='0x0000' bus='0x09' slot='0x00' function='0x0'/>
+    </hostdev>
     <memballoon model='virtio'>
       <alias name='balloon0'/>
       <address type='pci' domain='0x0000' bus='0x05' slot='0x00' function='0x0'/>
     </memballoon>
   </devices>
   <seclabel type='dynamic' model='selinux' relabel='yes'>
-    <label>system_u:system_r:svirt_t:s0:c27,c462</label>
-    <imagelabel>system_u:object_r:svirt_image_t:s0:c27,c462</imagelabel>
+    <label>system_u:system_r:svirt_t:s0:c123,c1012</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c123,c1012</imagelabel>
   </seclabel>
   <seclabel type='dynamic' model='dac' relabel='yes'>
     <label>+1001:+1001</label>
