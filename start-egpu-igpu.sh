@@ -44,7 +44,7 @@ sleep 2
 modprobe -r vfio-pci # GPU must be completely unused
 echo 13 > "/sys/bus/pci/devices/$VIRSH_GPU_VIDEO/resource0_resize" # 8 MB
 echo 3 > "/sys/bus/pci/devices/$VIRSH_GPU_VIDEO/resource2_resize"  # 8 GB
-modprove vfio-pci
+modprobe vfio-pci
 
 # Avoid GPU not being initialized before rebinding framebuffer
 sleep 2
