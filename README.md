@@ -267,11 +267,3 @@ this I have placed the BAR resizing after the GPU was successfully bound to `vfi
 then `vfio-pci` can be reloaded.
 
 <br>
-
-## Session Restore
-
-I use a tool called [gnome-session-restore](https://github.com/Clueliss/gnome-session-restore) (also written by me) to restore
-my gnome session after getting logged out by the VM being started or stopped. Since I found it annoying that I had to
-start every application by hand afterwards.
-
-<br>
