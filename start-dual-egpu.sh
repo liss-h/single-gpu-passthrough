@@ -16,9 +16,6 @@ if [[ -e "/sys/bus/pci/drivers/vfio-pci/$VIRSH_GPU_VIDEO" ]] && [[ -e "/sys/bus/
     exit 0
 fi
 
-# Save current gnome session
-# su -c "gnome-session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
-
 # Stop display manager
 systemctl stop gdm.service
 
