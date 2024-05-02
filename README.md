@@ -24,8 +24,6 @@ For `start.sh` and `stop.sh` you need to keep the following in mind.
 
 - If you **don't** use `gdm/gnome` edit the lines mentioning `gdm.service` accordingly.
 
-- **Related:** If you **don't** want to use [gnome-session-restore](https://github.com/Clueliss/gnome-session-restore) or **don't** use gnome remove or comment out the lines mentioning it.
-
 <br>
 
 ## Creating the Directory Structure
