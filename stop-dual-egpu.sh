@@ -15,9 +15,6 @@ if [[ -f "/home/$VIRSH_USER/.vmdebugshutdown" ]]; then
     exit 0
 fi
 
-# Save current gnome session
-su -c "gnome-session-restore --dbus-address $VIRSH_USER_DBUS_ADDR save" - $VIRSH_USER
-
 # Stop display manager
 systemctl stop gdm.service
 
