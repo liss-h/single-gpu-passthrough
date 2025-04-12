@@ -131,12 +131,12 @@ a one monitor Linux, one monitor Windows setup.
 
 ## UEFI Setup
 
-### Asus Strix Z790-F (ReBAR enabled)
+### Asus Strix Z790-F
 ```cs
 📁 Advanced
 |__📁 PCI Subsystem Settings
-|  |__⚙ Above 4G Decoding := Enabled
-|  |__⚙ Re-Size BAR Support := Enabled
+|  |__⚙ Above 4G Decoding := Disabled [leaving this enabled causes crashes in kernel >=6.13]
+|  |__⚙ Re-Size BAR Support := Disabled [same as above]
 |__📁 System Agent (SA) Configuration
 |  |__⚙ VT-d := Enabled
 |  |__⚙ Control Iommu Pro-boot Behavior := Enable IOMMU
@@ -146,7 +146,7 @@ a one monitor Linux, one monitor Windows setup.
 ```
 
 
-### Gigabyte B550 Aorus Pro (ReBAR had to be disabled)
+### Gigabyte B550 Aorus Pro
 ```cs
 📁 Tweaker
 |__📁 Advanced CPU Settings
@@ -229,7 +229,7 @@ So in this case `1002:aaf8` and **not** `08:00.1`.
 
 <br>
 
-## Resizeable BAR
+## Resizeable BAR (No longer works on my system with kernel >=6.13)
 QEMU currently does not support exposing ReBAR capabilities fully. I.e. the VM cannot resize the BARs itself.
 This means we must resize the BARs ourselves. This [guide from Level1Techs](https://forum.level1techs.com/t/vfio-2023-radeon-7000-edition-wip/199252) however pointed me to this solution.
 
